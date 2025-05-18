@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Number Guessing Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: backgroundShift 15s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 1s ease-in-out;
+    }
+
+    @keyframes backgroundShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      transition: all 0.8s ease-in-out;
+    }
+
+    .screen.active {
+      display: flex;
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .screen.fade-out {
+      opacity: 0;
+      z-index: 0;
+    }
+
+    .intro-screen h1 {
+      font-size: 3rem;
+      color: white;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .intro-screen p {
+      font-size: 1.2rem;
+      color: #f3f3f3;
+      max-width: 600px;
+      margin: 1rem auto;
+    }
+
+    .start-btn {
+      background: white;
+      color: #333;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .start-btn:hover {
+      background: #23a6d5;
+      color: white;
+    }
+
+    .game-container {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(25px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .game-container h2 {
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+
+    input[type="number"] {
+      padding: 0.6rem;
+      font-size: 1rem;
+      width: 80%;
+      border: none;
+      border-radius: 10px;
+      outline: none;
+      margin-bottom: 1rem;
+    }
+
+    button.guess-btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background: #ff6a00;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.3s ease;
+    }
+
+    button.guess-btn:hover {
+      background: #ff3c00;
+    }
+
+    .message {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      min-height: 1.5rem;
+    }
+
+    .win {
+      color: #00ff99;
+      font-weight: bold;
+      animation: pop 0.4s ease-in-out;
+    }
+
+    .lose {
+      color: #ff4e4e;
+      font-weight: bold;
+      animation: shake 0.3s ease-in-out;
+    }
+
+    #play-again {
+      display: none;
+      margin-top: 1rem;
+      background-color: #00b894;
+      color: white;
+      border-radius: 30px;
+      padding: 0.6rem 1.2rem;
+    }
+
+    #play-again:hover {
+      background-color: #00a37a;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Intro Screen -->
+  <div class="screen intro-screen active" id="intro-screen">
+    <h1>🎮 Number Guessing Challenge</h1>
+    <p>
+      Welcome to the ultimate test of intuition!<br>
+      Try to guess the number I'm thinking of between <strong>1 and 100</strong>.<br>
+      You have <strong>10 tries</strong> to find the secret number. Are you ready?
+    </p>
+    <button class="start-btn" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div class="screen game-screen" id="game-screen">
+    <div class="game-container">
+      <h2>Guess the Number</h2>
+      <input type="number" id="guess" placeholder="Enter your guess" />
+      <br>
+      <button class="guess-btn" onclick="checkGuess()">Submit</button>
+      <div class="message" id="hint"></div>
+      <div class="message" id="status"></div>
+      <button id="play-again" onclick="resetGame()">🔁 Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    let target = Math.floor(Math.random() * 100) + 1;
+    let attempts = 10;
+
+    function startGame() {
+      document.getElementById('intro-screen').classList.remove('active');
+      document.getElementById('intro-screen').classList.add('fade-out');
+      setTimeout(() => {
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('game-screen').classList.add('active');
+      }, 800);
+    }
+
+    function checkGuess() {
+      const guess = parseInt(document.getElementById('guess').value);
+      const hint = document.getElementById('hint');
+      const status = document.getElementById('status');
+
+      if (isNaN(guess) || guess < 1 || guess > 100) {
+        hint.textContent = "🚫 Please enter a number between 1 and 100.";
+        hint.className = "message";
+        return;
+      }
+
+      attempts--;
+
+      if (guess === target) {
+        hint.textContent = "🎉 Correct! You nailed it!";
+        hint.className = "message win";
+        status.textContent = `🎊 You win in ${10 - attempts} attempts!`;
+        status.className = "message win";
+        endGame();
+      } else if (attempts === 0) {
+        hint.textContent = "❌ Game over!";
+        status.textContent = `The number was ${target}.`;
+        status.className = "message lose";
+        endGame();
+      } else {
+        hint.textContent = guess < target ? "🔼 Too low!" : "🔽 Too high!";
+        hint.className = "message";
+        status.textContent = `${attempts} attempt(s) left.`;
+      }
+    }
+
+    function endGame() {
+      document.getElementById('guess').disabled = true;
+      document.querySelector('.guess-btn').disabled = true;
+      document.getElementById('play-again').style.display = 'inline-block';
+    }
+
+    function resetGame() {
+      target = Math.floor(Math.random() * 100) + 1;
+      attempts = 10;
+      document.getElementById('guess').value = '';
+      document.getElementById('guess').disabled = false;
+      document.querySelector('.guess-btn').disabled = false;
+      document.getElementById('hint').textContent = '';
+      document.getElementById('status').textContent = '';
+      document.getElementById('play-again').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
